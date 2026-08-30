@@ -1,0 +1,5 @@
+interface:
+  display_name: "Principle: Guard the Context Window"
+  short_description: "Keep bulk work out of the coordinating context"
+policy:
+  allow_implicit_invocation: false

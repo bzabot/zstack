@@ -56,9 +56,9 @@ For a simple question, investigate in one pass. For a complex question, spawn pa
 
 Each investigator should:
 
-- `subagent_type`: `generalPurpose`
-- `model`: choose the best one for the job
-- `readonly`: `true`
+- Use the built-in explorer role with a unique `task_name`.
+- Usually inherit the parent's model. If overriding it, choose an available `model` and matching `reasoning_effort`.
+- Instruct the agent not to mutate files or external state. Use a custom agent profile with `sandbox_mode = "read-only"` when hard enforcement is required.
 
 Give each investigator the original question, the code anchor, and the relevant instructions from `references/investigator-prompt.md` and the source playbook. Investigators gather evidence rather than writing the final answer. They return what they searched, direct evidence with precise citations, indirect evidence and its inference chain, contradictions, gaps, and additional leads.
 
@@ -68,9 +68,9 @@ Do not search every source by default. Choose sources that can answer the questi
 
 For complex or delegated investigations, spawn one subagent to synthesize the findings:
 
-- `subagent_type`: `generalPurpose`
-- `model`: choose the best one for the job
-- `readonly`: `true`
+- Use the built-in default role with a unique `task_name`.
+- Usually inherit the parent's model. If overriding it, choose an available `model` and matching `reasoning_effort`.
+- Instruct the agent not to mutate files or external state.
 
 Give it the investigator findings, code anchor, original question, `references/epistemics.md`, and `references/synthesizer-prompt.md`. It should reconcile overlapping evidence, surface contradictions, distinguish facts from inferences, and avoid filling gaps with a plausible story.
 

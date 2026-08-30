@@ -20,7 +20,7 @@ The explorers each investigated a different angle of the same subsystem. Their f
 
 Write an explanation a senior engineer unfamiliar with this area could read and walk away with a solid mental model, understanding the architecture well enough to start working in it confidently.
 
-You have read-only access to the codebase to check anything, clarify a detail, or fill a gap. Use Read, Grep, and Glob as needed. The explorers did the heavy lifting, so you shouldn't need to re-explore from scratch.
+You are instructed not to mutate the codebase or external state. Use Read, Grep, and Glob as needed to check anything, clarify a detail, or fill a gap. This instruction is not sandbox enforcement. The explorers did the heavy lifting, so you shouldn't need to re-explore from scratch.
 
 ## Output Format
 

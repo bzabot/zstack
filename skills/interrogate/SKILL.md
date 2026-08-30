@@ -1,7 +1,6 @@
 ---
 name: interrogate
 description: 'Use for "interrogate", "adversarial review", "multi-model review", "challenge this", "stress test this code", "find blind spots", or "tear this apart". Multiple LLM reviewers challenge changes from independent angles.'
-disable-model-invocation: true
 ---
 
 # Interrogate
@@ -33,11 +32,7 @@ Write one clear paragraph. Reviewers challenge whether the work achieves the int
 
 Choose the number of reviewers for the scope. Launch them in parallel when there is more than one. Use different models when available and useful. If only one model is available, use it for multiple independent reviews.
 
-For each reviewer:
-
-- `subagent_type`: `generalPurpose`
-- `model`: the lowest model that can reliably perform the review
-- `readonly`: `true`
+For each reviewer, use the built-in explorer role and a unique `task_name`. Usually inherit the parent's model. When an override is useful, set an available `model` and `reasoning_effort` that can reliably perform the review. Tell reviewers not to mutate files or external state. This is an instruction, not a permission boundary; use a custom agent profile with `sandbox_mode = "read-only"` when hard enforcement is required.
 
 Read `references/reviewer-prompt.md` and fill in the template with:
 

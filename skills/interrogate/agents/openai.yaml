@@ -1,0 +1,5 @@
+interface:
+  display_name: "Interrogate"
+  short_description: "Run independent adversarial reviews of a change"
+policy:
+  allow_implicit_invocation: false

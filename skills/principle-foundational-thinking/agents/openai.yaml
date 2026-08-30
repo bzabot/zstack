@@ -1,0 +1,5 @@
+interface:
+  display_name: "Principle: Foundational Thinking"
+  short_description: "Choose core shapes before writing feature logic"
+policy:
+  allow_implicit_invocation: false

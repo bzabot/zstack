@@ -1,7 +1,6 @@
 ---
 name: principle-fix-root-causes
 description: "Apply when debugging. Trace each symptom to its root cause and fix it there; reproduce first, ask why until you reach it, resist nil-check guards that silence crashes."
-disable-model-invocation: true
 ---
 
 # Fix Root Causes
@@ -25,6 +24,6 @@ Code doesn't change between runs. State does. When something "fails after restar
 
 ## If necessary, use the project's verification instructions
 
-If `.zabot/skills/verify-*/SKILL.md` exists, read the applicable file before choosing how to verify. Treat its `Launch`, `Doctor`, `Drive`, `Evidence`, `Cleanup`, and `Helpers` sections as the executable verification contract. Use `features/README.md` and the relevant feature page to choose a real user-facing path and its observable end state.
+If `.agents/skills/verify-*/SKILL.md` exists, read the applicable file before choosing how to verify. Treat its `Launch`, `Doctor`, `Drive`, `Evidence`, `Cleanup`, and `Helpers` sections as the executable verification contract. Use `features/README.md` and the relevant feature page to choose a real user-facing path and its observable end state.
 
 Run the contract end to end: launch the isolated instance, run the doctor check, drive the feature, capture the named evidence, and clean up what you started. Confirm afterward that the evidence still exists. Do not replace this path with a unit test, internal setter, test-only endpoint, or final-screen inspection when the contract provides a real-user path.

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Zabot Mode"
+  short_description: "Run a disciplined development playbook"
+  default_prompt: "Use $zabot-mode to plan, implement, and verify this development task."
+policy:
+  allow_implicit_invocation: false

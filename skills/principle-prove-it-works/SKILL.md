@@ -1,7 +1,6 @@
 ---
 name: principle-prove-it-works
 description: "Apply after completing a task, before declaring done. Verify against the real artifact (run the feature, read the actual value, inspect the diff), not a proxy, self-report, or 'it compiles.'"
-disable-model-invocation: true
 ---
 
 # Prove It Works
@@ -30,7 +29,7 @@ When verifying delegated work, inspect the actual output artifact (git diff, fil
 
 ## If necessary, use the project's verification instructions
 
-If `.zabot/skills/verify-*/SKILL.md` exists, read the applicable file before choosing how to verify. Treat its `Launch`, `Doctor`, `Drive`, `Evidence`, `Cleanup`, and `Helpers` sections as the executable verification contract. Use `features/README.md` and the relevant feature page to choose a real user-facing path and its observable end state.
+If `.agents/skills/verify-*/SKILL.md` exists, read the applicable file before choosing how to verify. Treat its `Launch`, `Doctor`, `Drive`, `Evidence`, `Cleanup`, and `Helpers` sections as the executable verification contract. Use `features/README.md` and the relevant feature page to choose a real user-facing path and its observable end state.
 
 Run the contract end to end: launch the isolated instance, run the doctor check, drive the feature, capture the named evidence, and clean up what you started. Confirm afterward that the evidence still exists. Do not replace this path with a unit test, internal setter, test-only endpoint, or final-screen inspection when the contract provides a real-user path.
 

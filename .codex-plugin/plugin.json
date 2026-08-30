@@ -1,0 +1,22 @@
+{
+  "name": "zstack",
+  "version": "0.1.0",
+  "description": "Opinionated development workflows, principles, verification, and observable agent traces for Codex.",
+  "author": {
+    "name": "Bruno Zabot"
+  },
+  "skills": "./skills/",
+  "keywords": ["development", "workflow", "tracing", "verification"],
+  "interface": {
+    "displayName": "Zstack",
+    "shortDescription": "Disciplined coding workflows with trace artifacts",
+    "longDescription": "Use Zabot Mode, focused engineering principles, verification workflows, and privacy-aware execution traces for Codex development tasks.",
+    "developerName": "Bruno Zabot",
+    "category": "Developer Tools",
+    "capabilities": ["Skills", "Hooks", "Tracing"],
+    "defaultPrompt": [
+      "Use Zabot Mode to implement and verify this change.",
+      "Trace this task and explain the resulting agent tree."
+    ]
+  }
+}

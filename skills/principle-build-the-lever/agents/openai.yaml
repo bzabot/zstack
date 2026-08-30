@@ -1,0 +1,5 @@
+interface:
+  display_name: "Principle: Build the Lever"
+  short_description: "Make non-trivial work deterministic and rerunnable"
+policy:
+  allow_implicit_invocation: false

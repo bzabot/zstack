@@ -42,11 +42,7 @@ Decompose the question into 2-4 parallel exploration angles, each a distinct sli
 
 The right decomposition depends on the question. Use your judgment. Narrow questions: 2 explorers is fine. Broad subsystems: up to 4.
 
-Spawn all explorers in a single message:
-
-- `subagent_type`: `generalPurpose`
-- `model`: choose the best one for the job
-- `readonly`: `true`
+Spawn all built-in explorer-role agents in one parallel batch. Give each a unique `task_name`. Usually inherit the parent's model; when overriding it, choose an available `model` and matching `reasoning_effort` that can reliably handle the slice. Tell each agent not to mutate files or external state. That is a behavioral instruction. If hard enforcement is required, use a custom agent profile with `sandbox_mode = "read-only"`.
 
 Each explorer gets the same base prompt from `references/explorer-prompt.md` plus a specific exploration angle naming its slice. Each explorer should:
 
@@ -62,11 +58,7 @@ Then proceed to Step 3.
 
 ### Step 2b. Direct Explain (simple questions)
 
-Spawn a single Task subagent that explores and explains in one pass:
-
-- `subagent_type`: `generalPurpose`
-- `model`: choose the best one for the job
-- `readonly`: `true`
+Spawn a single built-in explorer-role agent with a unique `task_name` to explore and explain in one pass. Usually inherit the parent's model; when overriding it, choose an available `model` and matching `reasoning_effort`. Instruct it not to mutate files or external state, or use a custom agent with `sandbox_mode = "read-only"` when hard enforcement is required.
 
 The agent does its own exploration (Glob, Grep, Read) and writes the explanation directly. Read `references/explainer-prompt.md` for the communication style and output format. Same structure, just no explorer findings as input.
 
@@ -74,11 +66,7 @@ Proceed to Step 4.
 
 ### Step 3. Synthesize (complex questions only)
 
-Once all explorers return, spawn a single subagent to synthesize their findings into one coherent explanation:
-
-- `subagent_type`: `generalPurpose`
-- `model`: choose the best one for the job
-- `readonly`: `true`
+Once all explorers return, spawn a single default-role agent with a unique `task_name` to synthesize their findings into one coherent explanation. Usually inherit the parent's model; when overriding it, choose an available `model` and matching `reasoning_effort`. Tell it not to mutate files or external state.
 
 The explainer gets all explorers' findings and writes the human-facing explanation (output format below). Read `references/explainer-prompt.md` for the full prompt template. The explainer reconciles overlapping findings, resolves contradictions, and weaves the slices into a unified picture.
 
@@ -112,11 +100,7 @@ Run the full explain flow above (Steps 1-4). You must understand the architectur
 
 After the explanation is complete, spawn one architectural critic per model in your configured how-critics list, all in a single message.
 
-For each critic:
-
-- `subagent_type`: `generalPurpose`
-- `model`: choose the best one for the job. These are minimum reasoning levels. The lead should escalate any model when the architecture warrants deeper analysis.
-- `readonly`: `true`
+For each critic, use the built-in explorer role and a unique `task_name`. Usually inherit the parent's model. When an override is useful, set an available `model` and `reasoning_effort` sufficient for the architecture. Tell critics not to mutate files or external state. Use a custom agent profile with `sandbox_mode = "read-only"` only when hard enforcement is required.
 
 Read `references/critic-prompt.md` for the prompt template. Each critic gets:
 

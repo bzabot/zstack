@@ -1,0 +1,5 @@
+interface:
+  display_name: "Principle: Migrate Then Delete"
+  short_description: "Move every caller and remove the legacy API"
+policy:
+  allow_implicit_invocation: false

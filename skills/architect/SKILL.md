@@ -1,7 +1,6 @@
 ---
 name: architect
 description: "Sketch types, signatures, and module structure before code, then stay in the loop while implementation fills in. Use for /architect, 'architect this', 'design this', or non-trivial work where jumping to code would lock in the wrong shape."
-disable-model-invocation: true
 ---
 
 # Architect
@@ -28,7 +27,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 ## Phase B: Sketch
 
-Use the traced model to sketch a design. Sketch types, signatures, and module boundaries with `not implemented` bodies and pseudocode. Use the **foundational-thinking** principle skill to sequence scaffolding before feature work.
+Use the traced model to sketch a design. Sketch types, signatures, and module boundaries with `not implemented` bodies and pseudocode. Use [**principle-foundational-thinking**](../principle-foundational-thinking/SKILL.md) to sequence scaffolding before feature work.
 
 Screen the candidate against [`references/design-red-flags.md`](references/design-red-flags.md) before synthesis. Reject or revise shallow modules, information leakage, temporal decomposition, and pass-through methods.
 
@@ -40,7 +39,7 @@ Default: proceed directly to implementation with the synthesized design. No huma
 
 Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
 
-The synthesis can ship as its own commit either way. That's the "scaffold first" mode of the **foundational-thinking** principle skill; subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle skill. For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
+The synthesis can ship as its own commit either way. That's the "scaffold first" mode of [**principle-foundational-thinking**](../principle-foundational-thinking/SKILL.md); subsequent commits read as filling in bodies against a stable contract. Planned and scoped breakage during fill-in is fine, per [**principle-outcome-oriented-execution**](../principle-outcome-oriented-execution/SKILL.md). For adversarial pressure on the design before implementing, run the **interrogate** skill on the synthesized sketch.
 
 If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
 
@@ -52,7 +51,7 @@ Deviations from the sketch are signal worth surfacing, not friction to absorb si
 
 ## Phase E: Scrap when the architecture is wrong
 
-If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per the **fix-root-causes** principle skill.
+If implementation keeps producing friction the sketch can't absorb, throw the sketch out. Don't bolt fixes onto a wrong design, per [**principle-fix-root-causes**](../principle-fix-root-causes/SKILL.md).
 
 The signal is a _pattern_, not single instances. Tells:
 

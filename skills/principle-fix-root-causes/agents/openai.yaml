@@ -1,0 +1,5 @@
+interface:
+  display_name: "Principle: Fix Root Causes"
+  short_description: "Reproduce symptoms and fix their proven cause"
+policy:
+  allow_implicit_invocation: false

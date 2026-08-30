@@ -1,0 +1,6 @@
+interface:
+  display_name: "Comment Sicko"
+  short_description: "Audit comments and workaround prose"
+  default_prompt: "Use $comment-sicko to audit comments in the current diff."
+policy:
+  allow_implicit_invocation: false

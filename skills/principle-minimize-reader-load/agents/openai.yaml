@@ -1,0 +1,5 @@
+interface:
+  display_name: "Principle: Minimize Reader Load"
+  short_description: "Reduce layers, hidden state, and indirection"
+policy:
+  allow_implicit_invocation: false
