@@ -25,39 +25,25 @@ class PackageTests(unittest.TestCase):
     def test_manifest_and_migrated_paths(self):
         manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
         self.assertEqual(manifest["name"], "zstack")
-        self.assertEqual(manifest["version"], "0.1.0")
+        self.assertEqual(manifest["version"], "0.2.0")
         self.assertEqual(manifest["author"]["name"], "Bruno Zabot")
         self.assertEqual(manifest["skills"], "./skills/")
         self.assertNotIn("hooks", manifest)
+        self.assertEqual(manifest["interface"]["capabilities"], ["Skills"])
         self.assertTrue((SKILLS / "zabot-mode/SKILL.md").is_file())
         self.assertTrue((SKILLS / "comment-sicko/SKILL.md").is_file())
         self.assertFalse((ROOT / "zabot-mode").exists())
         self.assertFalse((ROOT / "agents/comment-sicko.md").exists())
+        self.assertFalse((ROOT / "hooks/hooks.json").exists())
+        self.assertFalse((ROOT / "hooks/zabot_trace.py").exists())
 
-    def test_hooks_capture_the_supported_lifecycle_synchronously(self):
-        config = json.loads((ROOT / "hooks/hooks.json").read_text())
-        hooks = config["hooks"]
-        expected = {
-            "SessionStart",
-            "UserPromptSubmit",
-            "PreToolUse",
-            "PostToolUse",
-            "SubagentStart",
-            "SubagentStop",
-            "Stop",
-            "SessionEnd",
-        }
-        self.assertEqual(set(hooks), expected)
-        command = 'python3 "${PLUGIN_ROOT}/hooks/zabot_trace.py" record'
-        for event_name, matchers in hooks.items():
-            self.assertEqual(len(matchers), 1)
-            entries = matchers[0]["hooks"]
-            self.assertEqual(len(entries), 1)
-            self.assertEqual(entries[0]["type"], "command")
-            self.assertEqual(entries[0]["command"], command)
-            self.assertNotIn("async", entries[0])
-            if event_name == "SessionEnd":
-                self.assertLessEqual(entries[0]["timeout"], 3)
+        claude = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())
+        self.assertEqual((claude["name"], claude["version"]), ("zstack", "0.2.0"))
+        marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        self.assertEqual(marketplace["plugins"][0]["source"], "./")
+
+        codex_marketplace = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
+        self.assertEqual(codex_marketplace["plugins"][0]["source"], {"source": "local", "path": "./"})
 
     def test_skill_names_are_unique_kebab_case_and_match_their_directory(self):
         names = []
@@ -127,12 +113,11 @@ class PackageTests(unittest.TestCase):
             bare = re.findall(r"\bprinciple-[a-z-]+\b", without_links)
             self.assertEqual(bare, [], f"unlinked principle name(s) in {path}: {bare}")
 
-    def test_todo_order_and_tracing_reference_are_explicit(self):
+    def test_todo_order_is_explicit(self):
         text = (SKILLS / "zabot-mode/SKILL.md").read_text()
         first = text.index("first todo item")
         playbook = text.index("matched playbook's steps")
         self.assertLess(first, playbook)
-        self.assertIn("references/tracing.md", text)
 
 
 if __name__ == "__main__":

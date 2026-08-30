@@ -54,7 +54,7 @@ Use the built-in explorer role for repository discovery, default for general wor
 
 "Read-only" in a prompt is an instruction, not enforcement. When hard enforcement matters, use a configured custom agent whose profile sets `sandbox_mode = "read-only"`. Never imply that a role name or delegation argument changes sandbox permissions.
 
-Every child summary must include `Result`, `Decision rationale`, `Evidence`, and `Uncertainty`. Ask for concise, explicit decision rationale, never private chain-of-thought. This makes `last_assistant_message` useful in the observable trace.
+Every child summary must include `Result`, `Decision rationale`, `Evidence`, and `Uncertainty`. Ask for concise, explicit decision rationale, never private chain-of-thought. This makes the child's final response useful to the parent.
 
 You own every subagent's work. Review the diff and write your own summary, don't pass through what it said. Interrupt-chained resumes silently drop directives, so fire a fresh subagent with consolidated scope rather than trusting a "done" summary. A second opinion is the same prompt against a different model. Agreement is high-signal.
 
@@ -71,10 +71,6 @@ Write the reply clean as you draft it. The cleanup-afterward pass has been measu
 ## Comments
 
 Comments follow the same rule as the reply. Write them clean as you go. You and the sub-agents can use no-comments.
-
-## Observable traces
-
-The plugin hook records observable inputs, tool activity, and explicit child summaries. Read [`references/tracing.md`](references/tracing.md) before relying on a trace for auditing, privacy, or coverage claims.
 
 ## Playbooks
 

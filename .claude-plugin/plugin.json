@@ -1,0 +1,9 @@
+{
+  "name": "zstack",
+  "version": "0.2.0",
+  "description": "Opinionated development workflows, principles, and verification.",
+  "author": {
+    "name": "Bruno Zabot"
+  },
+  "keywords": ["development", "workflow", "verification"]
+}
