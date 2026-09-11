@@ -7,7 +7,7 @@ description: Explain a code change, diff, branch, pull request, or the current t
 
 Two modes:
 
-- **Quick view** — answer in chat with the smallest visual that makes the point. Default for "show me", "explain this", "what changed here".
+- **Quick view** — answer in chat with the smallest visual that makes the point. Default for "show me", "explain this", "what changed here". Skip the preamble, keep prose brief, lead with the view.
 - **Full page** — one self-contained HTML file. Use when the user asks for a page, artifact, walkthrough, quiz, or something to share.
 
 Unclear? Give the quick view and offer the page in one line.
@@ -41,6 +41,66 @@ Rules for every view:
 - Show the whole block only when most of it is new, order or ownership would otherwise be hidden, or the user needs a copyable target shape.
 - Never ASCII box-art. Text-shape sketches in `<pre><code>` are structure and are welcome; drawn boxes are not.
 
+Canonical shapes — match these, substituting real names and values from the code.
+
+Pseudocode for logic; a call tree for runtime flow:
+
+```text
+on(save)
+  if content is unchanged
+    return cached result
+  write new content
+  return fresh result
+```
+
+```text
+submitForm
+  createSession
+    persistPrompt
+    launchAgent
+  navigateToSession
+```
+
+A component tree carries state and the file path; a file tree carries ownership:
+
+```tsx
+<SessionPage> (apps/example/src/routes/session.tsx)
+  useSessionEvents()
+  <SessionToolbar>
+    <RunSkillButton> (packages/ui)
+```
+
+```text
+src/
+├── commands/       # parses user actions
+├── sessions/       # owns session state
+└── transport/      # sends API requests
+```
+
+Match the diff shape to the topic — diff the call tree, the file tree, the component tree, or the state flow, whichever the change actually alters:
+
+```diff
+ submitForm
+   createSession
+     persistPrompt
++    expandSkillMention
+     launchAgent
+-  navigateToSession
++  navigateToSession
++    subscribeToEvents
+```
+
+```diff
+ src/
+ ├── commands/
++│   └── show-me.ts       # expands the slash command
+ ├── sessions/
+-└── transport.ts
++└── transport/
++    ├── client.ts
++    └── stream.ts
+```
+
 <important if="you are producing the full HTML explanation page">
 
 ## Full page
@@ -61,7 +121,7 @@ Also: a file tree if the change moves responsibility between directories; a comp
 
 Plain language, jargon explained on first use, readable on phones, one continuous page with no top-level tabs.
 
-Before handing off, confirm the file is a complete HTML document with no external dependencies and working quiz interactions; open or inspect it if practical. Return the absolute path as a clickable local-file link, say what you inspected, and name any assumption or unverified claim. Keep the file out of the repository unless asked.
+Before handing off, confirm the file is a complete HTML document with no external dependencies and working quiz interactions; open or inspect it if practical. Then open it for the user (`open` on macOS, `xdg-open` on Linux), return the absolute path as a clickable local-file link, say what you inspected, and name any assumption or unverified claim. Keep the file out of the repository unless asked.
 </important>
 
 <important if="you are styling the HTML page">
@@ -102,10 +162,9 @@ Ask about behavior, causality, contracts, edges, or trade-offs — never a phras
 
 ## Examples
 
-`examples/` holds two real pages produced by this skill, both explaining MIT-licensed open-source code. Read one first for shape, not content:
+`examples/` holds a real page produced by this skill, explaining MIT-licensed open-source code. Read it first for shape, not content:
 
 - `examples/2026-09-08-explanation-p-limit-reject-on-clear.html` — a single-commit feature explanation (`sindresorhus/p-limit`, commit `8907801f`).
-- `examples/2026-09-08-explanation-express-router-dispatch.html` — a multi-file subsystem explanation (`pillarjs/router` v2.2.0, three files).
 
-They use the view table densely and carry their own inlined CSS; take yours from either one.
+It uses the view table densely and carries its own inlined CSS; take yours from it.
 </important>
