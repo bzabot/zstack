@@ -1,5 +1,0 @@
-interface:
-  display_name: "No Comments"
-  short_description: "Audit comments and fix accepted code smells"
-policy:
-  allow_implicit_invocation: false

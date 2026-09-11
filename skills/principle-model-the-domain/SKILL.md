@@ -23,3 +23,5 @@ Encode the real domain in a data structure instead of scattering it across condi
 Do not force an abstraction. Prefer boring code if the current shape is already clear, local, and unlikely to grow. Be skeptical of an abstraction that adds indirection without removing branches, duplicated rules, invalid states, or lifecycle risk.
 
 The tell that you skipped this is a new feature that grows an existing if/else chain by one more branch, or a second boolean that must stay in sync with the first. Temporal decomposition is another tell. Phase-named modules repeat the same domain rules across steps.
+
+**A spec'd structure is already a decision.** When the spec names the state machine, the enum, or the table, implement that one. Reach for this principle where the spec stops: the internals it left to you, and the branching that creeps in while you build. If the spec'd structure cannot represent something the spec also requires, say so before you build around it.

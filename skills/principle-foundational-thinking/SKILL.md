@@ -18,3 +18,5 @@ At code level, DRY the structure, not every line. Types and data models should c
 Each increment should land a coherent abstraction or deepen one that exists. Do not spread a new capability across callers as special-case coordination.
 
 Subtraction comes before scaffolding: remove dead weight first, then lay foundations.
+
+**The spec names the shape.** When the spec specifies types, tables, or a schema, that is the foundation; check it against the code it references and build it. This principle governs the shapes the spec leaves open, and it is how you push back with a concrete alternative when a spec'd shape is wrong. Say that out loud, do not substitute silently.

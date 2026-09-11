@@ -58,11 +58,9 @@ class PackageTests(unittest.TestCase):
 
     def test_unsupported_frontmatter_is_replaced_by_explicit_invocation_policy(self):
         explicit_only = {
-            "architect",
             "create-verification-skill",
-            "interrogate",
-            "no-comments",
-            "tdd",
+            "grilling",
+            "ponytail",
             "zabot-mode",
             *{
                 path.name
@@ -99,25 +97,39 @@ class PackageTests(unittest.TestCase):
             self.assertIn(link, text)
             self.assertTrue((SKILLS / "zabot-mode" / f"../{name}/SKILL.md").resolve().is_file())
 
-    def test_architect_and_playbooks_use_resolvable_exact_principle_links(self):
-        paths = [SKILLS / "architect/SKILL.md", *sorted((SKILLS / "zabot-mode/playbooks").glob("*.md"))]
-        for path in paths:
+    def test_zabot_mode_directly_links_ponytail(self):
+        path = SKILLS / "zabot-mode/SKILL.md"
+        text = path.read_text()
+        self.assertIn("[**ponytail**](../ponytail/SKILL.md)", text)
+        self.assertTrue((path.parent / "../ponytail/SKILL.md").resolve().is_file())
+
+    def test_zabot_mode_uses_resolvable_exact_principle_links(self):
+        path = SKILLS / "zabot-mode/SKILL.md"
+        text = path.read_text()
+        for target in re.findall(r"\]\((\.\./principle-[a-z-]+/SKILL\.md)\)", text):
+            self.assertTrue((path.parent / target).resolve().is_file(), target)
+        without_links = re.sub(
+            r"\[\*\*principle-[a-z-]+\*\*\]\(\.\./principle-[a-z-]+/SKILL\.md\)",
+            "",
+            text,
+        )
+        bare = re.findall(r"\bprinciple-[a-z-]+\b", without_links)
+        self.assertEqual(bare, [], f"unlinked principle name(s): {bare}")
+
+    def test_no_skill_references_a_removed_skill(self):
+        removed = ("architect", "how", "why", "interrogate", "tdd", "no-comments", "playbook")
+        for path in sorted(SKILLS.rglob("*.md")):
             text = path.read_text()
-            for target in re.findall(r"\]\((\.\./(?:\.\./)?principle-[a-z-]+/SKILL\.md)\)", text):
-                self.assertTrue((path.parent / target).resolve().is_file(), f"{path}: {target}")
-            without_links = re.sub(
-                r"\[\*\*principle-[a-z-]+\*\*\]\(\.\./(?:\.\./)?principle-[a-z-]+/SKILL\.md\)",
-                "",
-                text,
-            )
-            bare = re.findall(r"\bprinciple-[a-z-]+\b", without_links)
-            self.assertEqual(bare, [], f"unlinked principle name(s) in {path}: {bare}")
+            for name in removed:
+                self.assertNotIn(f"]({name}/", text, f"{name} in {path}")
+                self.assertNotIn(f"/{name}/SKILL.md", text, f"{name} in {path}")
+                self.assertNotIn(f"/{name}`", text, f"{name} in {path}")
 
     def test_todo_order_is_explicit(self):
         text = (SKILLS / "zabot-mode/SKILL.md").read_text()
-        first = text.index("first todo item")
-        playbook = text.index("matched playbook's steps")
-        self.assertLess(first, playbook)
+        first = text.index("first item")
+        steps = text.index("Build steps copied verbatim")
+        self.assertLess(first, steps)
 
 
 if __name__ == "__main__":

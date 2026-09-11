@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ponytail"
+  short_description: "Choose the smallest solution that fully works"
+  default_prompt: "Use $ponytail to minimize this coding change."
+policy:
+  allow_implicit_invocation: false

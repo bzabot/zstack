@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rejectOnClear in p-limit &mdash; how the change works</title>
+<style>
+/* ---------- tokens ---------- */
+:root {
+  color-scheme: light dark;
+  --brand:      light-dark(#007785, #4cc4d0);
+  --brand-soft: light-dark(#e6f1f2, #123034);
+  --mark-cyan:  #00A4B6;
+  --mark-blue:  #3C6CAA;
+  --mark-green: #91D500;
+  --accent:     light-dark(#3C6CAA, #8fb3e0);
+  --accent-soft:light-dark(#eef2f8, #1b2635);
+  --ink:     light-dark(#14181f, #eceef1);
+  --ink-2:   light-dark(#333a45, #c8ced6);
+  --ink-3:   light-dark(#6b7280, #9aa3af);
+  --bg:      light-dark(#ffffff, #0f1216);
+  --panel:   light-dark(#f5f7f8, #171b21);
+  --code-bg: light-dark(#f5f7f8, #12151a);
+  --line:    light-dark(#e3e6ea, #2a313b);
+  --line-2:  light-dark(#d4d8de, #39424e);
+  --ok:   light-dark(#1f6b4f, #7fd3ae);  --ok-bg:     light-dark(#e7f2ec, #16302a);
+  --no:   light-dark(#a8362c, #ef9d94);  --no-bg:     light-dark(#f9ebe9, #331f1d);
+  --warn: light-dark(#8a5a00, #e8c07a);  --warn-soft: light-dark(#fdf3e0, #33291a);
+  --radius: 10px;
+  --measure: 860px;
+}
+
+/* ---------- base ----------
+   The house faces are preferred, never fetched and never embedded: the page
+   may not touch the network, and inlining woff2 would double its weight. */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink-2);
+  font: 16px/1.62 "Inter", ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.wrap { max-width: var(--measure); margin: 0 auto; padding: 32px 18px 96px; }
+p { margin: 0 0 12px; }
+b, strong { font-weight: 600; color: var(--ink); }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ---------- headings ----------
+   Rules, not fills. h2 carries the brand rule; nothing else does. */
+h1 { font-size: clamp(24px, 4.6vw, 34px); line-height: 1.2; letter-spacing: -0.01em;
+     font-weight: 700; color: var(--ink); margin: 0 0 10px; }
+h2 { font-size: clamp(20px, 3.4vw, 25px); letter-spacing: -0.01em; font-weight: 700;
+     color: var(--ink); margin: 52px 0 14px; padding-bottom: 8px;
+     border-bottom: 2px solid var(--brand); scroll-margin-top: 16px; }
+h3 { font-size: 1.12rem; font-weight: 600; color: var(--ink); margin: 30px 0 8px; }
+h4 { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+     color: var(--ink-3); margin: 22px 0 6px; }
+.lead, .lede { font-size: 1.05rem; color: var(--ink-3); }
+
+/* ---------- brand bar ----------
+   Three EQUAL segments, one per colour in the mark, in brand order. Directly
+   above the page title and nowhere else. This is the only place brand identity
+   appears: no logo file, no wordmark, no inlined SVG mark. */
+.brandbar { display: flex; height: 3px; margin-bottom: 22px; }
+.brandbar span { flex: 1; }
+.brandbar span:nth-child(1) { background: var(--mark-cyan); }
+.brandbar span:nth-child(2) { background: var(--mark-blue); }
+.brandbar span:nth-child(3) { background: var(--mark-green); }
+
+header.top { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 28px; }
+
+/* ---------- links ----------
+   A link is a cross-reference, not a button. Underline on hover only. */
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------- contents ---------- */
+nav.toc { background: var(--panel); border-radius: var(--radius); padding: 16px 20px; margin: 24px 0 8px; }
+nav.toc ol { margin: 0; padding-left: 20px; }
+nav.toc li { margin: 4px 0; }
+
+/* ---------- lists ---------- */
+ul, ol { margin: 0 0 12px; padding-left: 22px; }
+li { margin: 0 0 6px; }
+dt { font-weight: 600; color: var(--ink); margin-top: 10px; }
+dd { margin: 2px 0 0; }
+
+/* ---------- callout ----------
+   Definition, invariant, edge case, consequence. THE ONLY CALLOUT. */
+.callout, .note { background: var(--panel); border-left: 3px solid var(--brand);
+                  border-radius: 0 var(--radius) var(--radius) 0;
+                  padding: 14px 18px; margin: 20px 0; }
+.callout .h, .note .h { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em;
+                        text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
+.callout p:last-child, .note p:last-child { margin-bottom: 0; }
+
+/* ---------- quotation ---------- */
+blockquote { margin: 20px 0 20px 4px; padding-left: 16px; border-left: 1px solid var(--line-2); color: var(--ink-2); }
+blockquote cite { display: block; margin-top: 8px; font-style: normal; font-size: 0.86rem; color: var(--ink-3); }
+blockquote cite::before { content: "— "; }
+
+/* ---------- tables ----------
+   Rules and alignment do the work. No fills, no zebra, no cell borders. */
+.tablewrap { overflow-x: auto; margin: 20px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.94rem; }
+th { text-align: left; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em;
+     text-transform: uppercase; color: var(--ink-3);
+     padding: 0 18px 8px 0; border-bottom: 1px solid var(--brand); white-space: nowrap; }
+td { vertical-align: top; padding: 10px 18px 10px 0; border-bottom: 1px solid var(--line); }
+td:last-child, th:last-child { padding-right: 0; }
+td.term { font-weight: 600; color: var(--ink); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+caption, .cap { caption-side: bottom; text-align: left; font-size: 0.82rem;
+                color: var(--ink-3); padding-top: 8px; }
+
+/* ---------- code ----------
+   Inline: an identifier the reader may have to type or search for.
+   Block: only when the exact characters matter. Never for emphasis. */
+code, kbd { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.88em; color: var(--ink); }
+pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.84rem; line-height: 1.55; background: var(--code-bg); color: var(--ink);
+      border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 14px 16px; margin: 16px 0; overflow-x: auto; white-space: pre; }
+pre code { font-size: inherit; }
+.filename { font-size: 0.76rem; color: var(--ink-3); margin: 16px 0 -8px;
+            font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+/* ---------- diagrams ----------
+   Component cards, labelled flows, before/after panels. Semantic HTML and
+   CSS only; never ASCII art, never an image. */
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 14px 16px; }
+.card .t { font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.grid { display: grid; gap: 14px; margin: 20px 0; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.card.before { border-left: 3px solid var(--no); }
+.card.after  { border-left: 3px solid var(--ok); }
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin: 20px 0; }
+.flow .step { flex: 1 1 150px; background: var(--panel); border: 1px solid var(--line);
+              border-radius: var(--radius); padding: 10px 12px; font-size: 0.9rem; }
+.flow .step .n { display: block; font-size: 0.7rem; letter-spacing: 0.08em;
+                 text-transform: uppercase; color: var(--brand); margin-bottom: 3px; }
+.flow .arrow { align-self: center; color: var(--ink-3); font-size: 0.8rem; white-space: nowrap; }
+.flow .arrow .lbl { display: block; font-size: 0.7rem; color: var(--ink-3); }
+.tag { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em;
+       text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+       background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- quiz ----------
+   Feedback never depends on colour alone: every state also carries a glyph
+   and a sentence, and nothing about the resting state reveals the answer. */
+.quiz { margin: 22px 0; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.quiz .q { font-weight: 600; color: var(--ink); margin-bottom: 12px; }
+.quiz .opts { display: grid; gap: 8px; }
+.opt { width: 100%; text-align: left; font: inherit; font-size: 0.95rem; color: var(--ink-2);
+       background: var(--bg); border: 1px solid var(--line-2); border-radius: 8px;
+       padding: 10px 12px; cursor: pointer; }
+.opt:hover:not([disabled]) { border-color: var(--brand); }
+.opt[disabled] { cursor: default; }
+.opt.correct   { border-color: var(--ok); background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+.opt.incorrect { border-color: var(--no); background: var(--no-bg); color: var(--no); }
+.opt.correct::before   { content: "✓ "; }
+.opt.incorrect::before { content: "✗ "; }
+.quiz .fb { margin-top: 12px; font-size: 0.92rem; border-left: 3px solid var(--brand);
+            background: var(--panel); padding: 10px 14px; border-radius: 0 8px 8px 0; }
+.quiz .fb[hidden] { display: none; }
+
+/* ---------- footnotes ---------- */
+.fn-area { margin-top: 48px; padding-top: 12px; border-top: 1px solid var(--line-2); }
+.fn-area p { font-size: 0.82rem; line-height: 1.5; color: var(--ink-3); margin-bottom: 6px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 560px) {
+  body { font-size: 15px; }
+  .wrap { padding: 22px 14px 72px; }
+  .flow { flex-direction: column; }
+  .flow .arrow { transform: rotate(90deg); align-self: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brandbar"><span></span><span></span><span></span></div>
+  <h1>rejectOnClear in p-limit</h1>
+  <p class="sub">How commit <code>8907801f</code> gives <code>clearQueue()</code> a way to settle the promises it throws away, and why that had to be an opt-in.</p>
+  <p class="meta">Fixes issue #25 · <code>Add `rejectOnClear` option</code> · 5 files, 79 insertions, 10 deletions · <a href="https://github.com/sindresorhus/p-limit">sindresorhus/p-limit</a>, MIT</p>
+</header>
+
+<p class="lead">Before this commit, calling <code>limit.clearQueue()</code> discarded the queued calls and left their promises unresolved forever. An <code>await Promise.all(...)</code> over those promises never returned. This commit adds a <code>rejectOnClear</code> option that rejects them with an <code>AbortError</code> instead, and the interesting part is what the queue had to become for that to be possible.</p>
+
+<nav class="toc" aria-label="Contents">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#background">Background — how the limiter runs a task</a></li>
+    <li><a href="#intuition">Intuition — two promises per call, one resolver in a queue</a></li>
+    <li><a href="#code">Code — the path from option to rejection</a></li>
+    <li><a href="#quiz">Quiz — five questions</a></li>
+  </ol>
+</nav>
+
+<h2 id="background">1. Background</h2>
+
+<h3>The smallest mental model</h3>
+
+<p><code>p-limit</code> runs async functions with a cap on how many are in flight. You create a limiter with a concurrency, then wrap each call:</p>
+
+<pre><code>import pLimit from 'p-limit';
+
+const limit = pLimit(2);
+
+const results = await Promise.all([
+  limit(() =&gt; fetchUser(1)),
+  limit(() =&gt; fetchUser(2)),
+  limit(() =&gt; fetchUser(3)),   // waits until one of the first two finishes
+]);</code></pre>
+
+<p><code>limit(fn)</code> returns a promise immediately, whether or not <code>fn</code> has started. That promise is the caller's only handle on the call. Everything in this change is about what that promise does when the call it represents is thrown away.</p>
+
+<div class="callout">
+  <span class="h">Definition</span>
+  <p><strong>Pending vs active.</strong> A call is <em>active</em> once <code>fn</code> has been invoked; <code>limit.activeCount</code> counts those. A call is <em>pending</em> while it is still sitting in the queue waiting for a slot; <code>limit.pendingCount</code> is the queue's size. <code>clearQueue()</code> only ever touches pending calls. It has never cancelled an active one, and this commit does not change that.</p>
+</div>
+
+<h3>What already existed</h3>
+
+<p>The limiter before the commit is about ninety lines. Four functions do the work, and one of them is stranger than it looks:</p>
+
+<pre><code>const queue = new Queue();          // yocto-queue, O(1) enqueue/dequeue
+let activeCount = 0;
+
+const resumeNext = () =&gt; {
+  if (activeCount &lt; concurrency &amp;&amp; queue.size &gt; 0) {
+    activeCount++;
+    queue.dequeue()();              // the queued value IS a function
+  }
+};
+
+const next = () =&gt; {
+  activeCount--;
+  resumeNext();
+};
+
+const enqueue = (function_, resolve, arguments_) =&gt; {
+  // Queue the internal resolve function instead of the run function
+  // to preserve the asynchronous execution context.
+  new Promise(internalResolve =&gt; {
+    queue.enqueue(internalResolve);
+  }).then(run.bind(undefined, function_, resolve, arguments_));
+
+  if (activeCount &lt; concurrency) {
+    resumeNext();
+  }
+};
+
+const generator = (function_, ...arguments_) =&gt; new Promise(resolve =&gt; {
+  enqueue(function_, resolve, arguments_);
+});</code></pre>
+
+<p>Read <code>enqueue</code> twice. What goes into the queue is not the task and not <code>run</code>. It is <code>internalResolve</code>, the resolver of a throwaway promise whose only job is to have <code>.then(run)</code> attached to it. Calling that resolver schedules <code>run</code> as a microtask rather than invoking it inline, which is what the comment means by preserving the asynchronous execution context: a task never starts synchronously inside the <code>limit()</code> call that queued it.</p>
+
+<h3>The behaviour this commit is about</h3>
+
+<pre><code>clearQueue: {
+  value() {
+    queue.clear();
+  },
+},</code></pre>
+
+<p><code>queue.clear()</code> drops every <code>internalResolve</code> on the floor. Nothing is left holding a reference to those resolvers, so the throwaway promises never resolve, <code>run</code> is never scheduled, and the promise the caller got back from <code>limit(fn)</code> is never settled by anybody. It is not rejected. It is not resolved. It is garbage that a running <code>await</code> is still waiting on.</p>
+
+<div class="callout">
+  <span class="h">Consequence</span>
+  <p>The documented use for <code>clearQueue()</code> is teardown: discard work that references state your app is about to throw away. But the idiomatic way to use <code>p-limit</code> is <code>await Promise.all(promises)</code>, and <code>Promise.all</code> settles only when every input settles. Teardown and the idiom were mutually exclusive. That is issue #25.</p>
+</div>
+
+<h2 id="intuition">2. Intuition</h2>
+
+<h3>There are two promises per call, and only one of them is reachable</h3>
+
+<p>Every <code>limit(fn)</code> creates a pair:</p>
+
+<div class="grid">
+  <div class="card">
+    <h4>The outer promise</h4>
+    <p style="margin-bottom:6px">Returned to the caller. Its <code>resolve</code> is passed down into <code>enqueue</code> and stored in the closure of the pending <code>run</code>.</p>
+    <pre><code>new Promise((resolve) =&gt; {
+  enqueue(function_, resolve, args);
+})</code></pre>
+    <p style="margin:0;font-size:14px">This is the promise your <code>await</code> is attached to.</p>
+  </div>
+  <div class="card">
+    <h4>The gate promise</h4>
+    <p style="margin-bottom:6px">Internal, never returned. Its resolver is the value in the queue; resolving it is what lets the task start.</p>
+    <pre><code>new Promise(internalResolve =&gt; {
+  queue.enqueue(internalResolve);
+}).then(run)</code></pre>
+    <p style="margin:0;font-size:14px">This is the thing <code>queue.clear()</code> destroys.</p>
+  </div>
+</div>
+
+<p>Clearing the queue kills the gate. The outer promise is a separate object, and after the clear nothing in the program holds its <code>resolve</code> in a form that will ever be called. So the fix is not about the queue's contents being dropped, it is about the queue not carrying enough information: to settle the outer promise on the way out, <code>clearQueue</code> needs the outer <strong><code>reject</code></strong>.</p>
+
+<h3>The queue stops holding functions and starts holding items</h3>
+
+<div class="grid">
+  <div class="card before">
+    <h4 class="t">Before</h4>
+    <pre><code>queue.enqueue(internalResolve)
+// ...
+queue.dequeue()()</code></pre>
+    <p style="margin:0;font-size:14px">One callable. Start it, or lose it.</p>
+  </div>
+  <div class="card after">
+    <h4 class="t">After</h4>
+    <pre><code>queue.enqueue({run, reject})
+// ...
+queue.dequeue().run()
+// or
+queue.dequeue().reject(abortError)</code></pre>
+    <p style="margin:0;font-size:14px">Two ways to retire an entry, and both settle the caller's promise.</p>
+  </div>
+</div>
+
+<h3>A toy run</h3>
+
+<p>Concurrency 1. Three calls, then a clear, with the first task still running:</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Step</th><th>Before the commit</th><th>With <code>rejectOnClear: true</code></th></tr></thead>
+  <tbody>
+    <tr><td><code>a = limit(slow)</code></td><td>active, promise live</td><td>active, promise live</td></tr>
+    <tr><td><code>b = limit(t)</code>, <code>c = limit(t)</code></td><td><code>pendingCount === 2</code></td><td><code>pendingCount === 2</code></td></tr>
+    <tr><td><code>limit.clearQueue()</code></td><td><code>pendingCount === 0</code></td><td><code>pendingCount === 0</code></td></tr>
+    <tr><td><code>await a</code></td><td>resolves normally</td><td>resolves normally</td></tr>
+    <tr><td><code>await Promise.all([a, b, c])</code></td><td><strong>never returns</strong></td><td>rejects, <code>error.name === 'AbortError'</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Why it is an option and not the new behaviour</h3>
+
+<p>Code that clears a queue today and never touches the discarded promises is correct today. Make the clear reject unconditionally and that same code gains rejections nobody handles, which in Node is a process-level warning or, with <code>--unhandled-rejections=strict</code>, a crash. So the behaviour ships behind <code>rejectOnClear</code>, defaulting to <code>false</code>, and the docs point the reader at the case that actually needs it: you <code>await</code> the promises.</p>
+
+<h2 id="code">3. Code</h2>
+
+<p>All application code is in <code>index.js</code>; the types in <code>index.d.ts</code> and one test in <code>test.js</code>. Ordered here by the path a value takes, not by file.</p>
+
+<h3>3.1 Reading the option, and the shape of the argument</h3>
+
+<p class="filename">index.js</p>
+<pre><code>export default function pLimit(concurrency) {
+  let rejectOnClear = false;
+
+  if (typeof concurrency === 'object') {
+    ({concurrency, rejectOnClear = false} = concurrency);
+  }
+
+  validateConcurrency(concurrency);
+
+  if (typeof rejectOnClear !== 'boolean') {
+    throw new TypeError('Expected `rejectOnClear` to be a boolean');
+  }</code></pre>
+
+<p>The options-object form already existed and pulled out one field. It becomes a destructuring assignment with a default, which is the whole of the parsing change. Note the parameter is still named <code>concurrency</code> and is reassigned in place, so the identifier means a number from this point on regardless of which call form was used.</p>
+
+<p>The type check is separate from <code>validateConcurrency</code> and throws eagerly, at construction. A limiter with a mistyped option never exists, so no caller ever waits on a promise governed by a misread flag.</p>
+
+<h3>3.2 The queue item</h3>
+
+<p class="filename">index.js</p>
+<pre><code>const enqueue = (function_, resolve, reject, arguments_) =&gt; {
+  const queueItem = {reject};
+
+  // Queue the internal resolve function instead of the run function
+  // to preserve the asynchronous execution context.
+  new Promise(internalResolve =&gt; {
+    queueItem.run = internalResolve;
+    queue.enqueue(queueItem);
+  }).then(run.bind(undefined, function_, resolve, arguments_));
+
+  if (activeCount &lt; concurrency) {
+    resumeNext();
+  }
+};</code></pre>
+
+<p>The object is built before the promise, then <code>run</code> is attached inside the executor and the object is enqueued. Order matters and it is safe here: a <code>Promise</code> executor runs synchronously, so by the time <code>enqueue</code> returns the item in the queue has both fields. Nothing can observe a half-built item, because the only two consumers are <code>resumeNext</code> and <code>clearQueue</code>, and neither can run in the middle of a synchronous executor.</p>
+
+<p class="filename">index.js — the two consumers</p>
+<pre><code> const resumeNext = () =&gt; {
+   if (activeCount &lt; concurrency &amp;&amp; queue.size &gt; 0) {
+     activeCount++;
+-    queue.dequeue()();
++    queue.dequeue().run();
+   }
+ };</code></pre>
+
+<p><code>run</code> is still <code>internalResolve</code>, so the microtask hop is unchanged and tasks still never start synchronously.</p>
+
+<h3>3.3 Carrying <code>reject</code> down from the caller</h3>
+
+<p class="filename">index.js</p>
+<pre><code>-const generator = (function_, ...arguments_) =&gt; new Promise(resolve =&gt; {
+-  enqueue(function_, resolve, arguments_);
++const generator = (function_, ...arguments_) =&gt; new Promise((resolve, reject) =&gt; {
++  enqueue(function_, resolve, reject, arguments_);
+ });</code></pre>
+
+<p>This is the line that makes the outer promise reachable from the queue. <code>resolve</code> continues to travel into <code>run</code>'s bound arguments; <code>reject</code> stops at the queue item.</p>
+
+<h3>3.4 Clearing</h3>
+
+<p class="filename">index.js</p>
+<pre><code>clearQueue: {
+  value() {
+    if (!rejectOnClear) {
+      queue.clear();
+      return;
+    }
+
+    const abortError = AbortSignal.abort().reason;
+
+    while (queue.size &gt; 0) {
+      queue.dequeue().reject(abortError);
+    }
+  },
+},</code></pre>
+
+<p>Two things to notice.</p>
+
+<p>The disabled path is the old body, returning early. Existing users get the identical code path they had, not a new one that happens to behave the same, which is the cheapest possible answer to "did this change break the default?".</p>
+
+<p>The enabled path drains rather than clearing. It needs each item on the way past to call its <code>reject</code>, and <code>dequeue</code> in a loop is the one operation that both empties the queue and hands over the items. <code>pendingCount</code> is <code>queue.size</code>, so it reads <code>0</code> synchronously after either path, which is what the test asserts.</p>
+
+<div class="callout">
+  <span class="h">Where the error comes from</span>
+  <p><code>AbortSignal.abort()</code> returns a signal that is already aborted, and its <code>reason</code> is the platform's standard abort error: a <code>DOMException</code> with <code>name === 'AbortError'</code>. Reading it off a throwaway signal costs one line and no dependency, and produces the same object shape <code>fetch</code> rejects with, so a caller can use one <code>err.name === 'AbortError'</code> check across both. It is not an <code>Error</code> subclass in the <code>instanceof</code> sense, so match on <code>name</code>, not on class.</p>
+</div>
+
+<p>One error instance is created per <code>clearQueue()</code> call and shared by every rejected promise in that clear. Callers get identity-equal reasons for calls discarded together, and the stack on it points at the abort machinery rather than at any one task.</p>
+
+<h3>3.5 The bug the option would have had in <code>limitFunction</code></h3>
+
+<p class="filename">index.js</p>
+<pre><code> export function limitFunction(function_, options) {
+-  const {concurrency} = options;
+-  const limit = pLimit(concurrency);
++  const limit = pLimit(options);
+
+   return (...arguments_) =&gt; limit(() =&gt; function_(...arguments_));
+ }</code></pre>
+
+<p><code>limitFunction</code> takes the same options object and used to extract a single field from it, which would have silently dropped <code>rejectOnClear</code> the moment anyone passed it. Forwarding the object instead makes the new option work here for free, and works only because <code>pLimit</code> already accepts that form.</p>
+
+<h3>3.6 The test</h3>
+
+<p class="filename">test.js</p>
+<pre><code>test('clearQueue rejects pending promises when enabled', async t =&gt; {
+  const limit = pLimit({concurrency: 1, rejectOnClear: true});
+
+  const runningPromise = limit(() =&gt; delay(100));
+  const pendingPromiseOne = limit(() =&gt; delay(10));
+  const pendingPromiseTwo = limit(() =&gt; delay(10));
+
+  await Promise.resolve();
+  t.is(limit.pendingCount, 2);
+
+  limit.clearQueue();
+  t.is(limit.pendingCount, 0);
+
+  await runningPromise;
+  await t.throwsAsync(pendingPromiseOne, {name: 'AbortError'});
+  await t.throwsAsync(pendingPromiseTwo, {name: 'AbortError'});
+});</code></pre>
+
+<p>The <code>await Promise.resolve()</code> is not decoration. The first call's task starts on a microtask, so <code>pendingCount</code> is 3 synchronously and 2 only after the microtask queue has turned once. The assertion pins the state the test is actually about.</p>
+
+<p><code>await runningPromise</code> then states the other half of the contract: the active task was not cancelled, it completed, and its promise resolved normally in the same clear that rejected its two queued siblings.</p>
+
+<h3>3.7 Types, and one consequence found later</h3>
+
+<p><code>index.d.ts</code> adds <code>readonly rejectOnClear?: boolean</code> to <code>Options</code> and documents the rejection under <code>clearQueue</code>. The published docs recommend it for the <code>Promise.all</code> case rather than describing it neutrally, which is the honest framing: if you do not await the promises, the old silence was never a problem.</p>
+
+<p>A later commit, <code>f3e7f9ba</code> ("Fix <code>limitFunction</code> queue clearing"), shows what 3.5 half-finished. Forwarding the options made <code>rejectOnClear</code> reach the limiter, but the function <code>limitFunction</code> returns is a bare arrow with no <code>clearQueue</code> on it, so there was no way to trigger the clear through that API at all:</p>
+
+<pre><code>const limitedFunction = (...arguments_) =&gt; limit(() =&gt; function_(...arguments_));
+Object.defineProperty(limitedFunction, 'clearQueue', {
+  value: limit.clearQueue,
+});
+
+return limitedFunction;</code></pre>
+
+<p>with the return type widened to <code>((...arguments_: Arguments) =&gt; Promise&lt;ReturnType&gt;) &amp; Pick&lt;LimitFunction, 'clearQueue'&gt;</code>. Worth reading as a pair: accepting an option is not the same as exposing the operation the option modifies.</p>
+
+<h3>3.8 What still does not happen</h3>
+
+<ul>
+  <li><strong>Active tasks are untouched.</strong> No <code>AbortSignal</code> is handed to task functions, so a running <code>fetch</code> keeps going and its promise settles on its own result.</li>
+  <li><strong>Rejections are yours to handle.</strong> Turning the option on and then ignoring the promises trades a hang for an unhandled rejection. The default stays <code>false</code> for exactly that reason.</li>
+  <li><strong>No per-call opt-in.</strong> The flag lives on the limiter, decided at construction, and cannot vary between calls into the same limiter.</li>
+</ul>
+
+<h2 id="quiz">4. Quiz</h2>
+<p>Five questions on the behaviour above. Pick an answer to see why it is or isn't right.</p>
+
+<div id="quiz"></div>
+
+<footer>
+  <p>Generated from commit <code>8907801ffa0252b51490a2c9efbb388d0c83391f</code> (2026-02-03) of <a href="https://github.com/sindresorhus/p-limit">sindresorhus/p-limit</a>, MIT licensed, read at tag <code>v7.3.2</code>. Sources read: <code>index.js</code> and its parent revision, <code>index.d.ts</code>, <code>test.js</code>, <code>index.test-d.ts</code>, <code>readme.md</code>, plus follow-up commit <code>f3e7f9ba</code>. Quoted code is upstream and carries the upstream licence. Claims about behaviour come from those files; nothing here was benchmarked or run.</p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var QUESTIONS = [
+    {
+      stem: "Before this commit, a call discarded by clearQueue() left its promise unsettled forever. Why?",
+      options: [
+        { text: "yocto-queue's clear() detaches its nodes without running their finalizers, so queued callbacks leak instead of erroring.",
+          correct: false,
+          why: "There are no finalizers involved. The queue is a plain linked list of values, and clear() simply forgets them." },
+        { text: "The queue held the resolver of an internal gate promise, not the caller's promise, and dropping it left the caller's resolve unreachable.",
+          correct: true,
+          why: "Correct. Each call creates two promises: the outer one returned to the caller, and a gate promise whose internalResolve sits in the queue with .then(run) attached. Clearing throws away the gate's resolver, so run is never scheduled and nothing ever calls the outer promise's resolve or reject." },
+        { text: "clearQueue() ran before the task's microtask hop, so resolve had not been captured in run's closure yet.",
+          correct: false,
+          why: "resolve is bound into run synchronously inside enqueue, before any hop. Timing is not the problem; reachability is." },
+        { text: "The outer promise was resolved with the discarded task's own promise, which itself never settled.",
+          correct: false,
+          why: "That resolve-with-a-promise step happens inside run, and run never executes for a discarded call. The outer promise is never resolved with anything." }
+      ]
+    },
+    {
+      stem: "Why did the queue's element type change from a bare function to an object with `run` and `reject`?",
+      options: [
+        { text: "clearQueue() has to settle the caller's promise on the way out, so the queue must carry the caller's reject alongside the starter.",
+          correct: true,
+          why: "Correct. The starter (internalResolve, now named run) was already there. reject is the new information, and the queue is the only place that both enqueue and clearQueue can see it." },
+        { text: "yocto-queue cannot store functions as values, so they had to be boxed in an object.",
+          correct: false,
+          why: "It stores any value, and it stored the bare function before this commit." },
+        { text: "The object lets resumeNext() decide whether to start or reject an item based on the current concurrency.",
+          correct: false,
+          why: "resumeNext only ever calls .run(). Rejection is driven from clearQueue, not from the concurrency check." },
+        { text: "Object identity is needed so clearQueue() can skip items whose tasks already started.",
+          correct: false,
+          why: "Started tasks are not in the queue at all; they were dequeued when they started. There is nothing to skip." }
+      ]
+    },
+    {
+      stem: "`limitFunction` changed from `pLimit(options.concurrency)` to `pLimit(options)`. What was wrong with the old line once `rejectOnClear` existed?",
+      options: [
+        { text: "pLimit stopped accepting a bare number, so passing options.concurrency would now throw a TypeError.",
+          correct: false,
+          why: "The bare-number form still works; that is the branch validateConcurrency sees when typeof concurrency is not 'object'." },
+        { text: "Destructuring the object loses its prototype, so a rejectOnClear inherited from a defaults object would be dropped.",
+          correct: false,
+          why: "No prototype chain is involved. The field is simply not read." },
+        { text: "It extracted only concurrency, so a caller's rejectOnClear was silently dropped and clearQueue kept the old unsettled behaviour.",
+          correct: true,
+          why: "Correct. The limiter built inside limitFunction never saw the flag. Forwarding the whole object fixes it, and works because pLimit already accepted the options form." },
+        { text: "options is typed as readonly, so reading a field off it inside limitFunction is a type error.",
+          correct: false,
+          why: "readonly properties are readable; readonly only forbids assignment. The old line type-checked fine and was still wrong at runtime." }
+      ]
+    },
+    {
+      stem: "With `rejectOnClear: true` and concurrency 1, one task running and two queued, what does `clearQueue()` do?",
+      options: [
+        { text: "All three promises reject with the same AbortError, and the running task's result is discarded.",
+          correct: false,
+          why: "Only queued calls are in the queue. The running call was dequeued when it started and is unaffected." },
+        { text: "The two queued promises reject with an AbortError; the running task keeps going and its promise resolves normally.",
+          correct: true,
+          why: "Correct. This is exactly what the commit's test asserts: pendingCount drops to 0, `await runningPromise` succeeds, and the two pending promises throw AbortError. No signal is passed to task functions, so nothing can cancel work in flight." },
+        { text: "The two queued promises reject, and the running task is aborted through the same AbortSignal the error came from.",
+          correct: false,
+          why: "The signal exists only to read a standard error object off its `reason`. It is never handed to a task, and tasks receive no abort argument at all." },
+        { text: "Nothing happens until the running task finishes, at which point the queue is drained with rejections.",
+          correct: false,
+          why: "clearQueue is synchronous: the while loop empties the queue and calls each reject before it returns, which is why pendingCount reads 0 immediately." }
+      ]
+    },
+    {
+      stem: "Why does `rejectOnClear` default to `false` instead of becoming the only behaviour?",
+      options: [
+        { text: "Rejecting requires AbortSignal, which is unavailable on the oldest Node version the package supports.",
+          correct: false,
+          why: "The package requires a Node version where AbortSignal.abort() is available; the feature ships unconditionally, only its use is gated." },
+        { text: "Draining the queue with dequeue() is slower than clear(), so the fast path is kept for hot code.",
+          correct: false,
+          why: "Both are O(n) at worst on a linked list and clearQueue is not a hot path. The early return preserves behaviour, not speed." },
+        { text: "Existing code that clears and then ignores the discarded promises would suddenly produce unhandled rejections.",
+          correct: true,
+          why: "Correct. A hang is silent; an unhandled rejection is a Node warning, or a crash under --unhandled-rejections=strict. Turning it on unconditionally would break working teardown code, so the option is opt-in and the docs point it at the case that needs it: you await the promises." },
+        { text: "The AbortError is a DOMException rather than an Error, so it cannot be thrown from a rejected promise by default.",
+          correct: false,
+          why: "Any value can be a rejection reason. The DOMException detail only matters when you match on it, where you check err.name rather than instanceof Error." }
+      ]
+    }
+  ];
+
+  var LETTERS = ["A", "B", "C", "D"];
+  var root = document.getElementById("quiz");
+
+  QUESTIONS.forEach(function (q, qi) {
+    var card = document.createElement("section");
+    card.className = "quiz";
+
+    var stem = document.createElement("p");
+    stem.className = "q";
+    stem.textContent = (qi + 1) + ". " + q.stem;
+    card.appendChild(stem);
+
+    var list = document.createElement("ul");
+    list.className = "opts";
+
+    var fb = document.createElement("div");
+    fb.className = "fb";
+    fb.hidden = true;
+    fb.setAttribute("role", "status");
+
+    q.options.forEach(function (opt, oi) {
+      var li = document.createElement("li");
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "opt";
+
+      var mark = document.createElement("span");
+      mark.className = "mark";
+      mark.textContent = LETTERS[oi] + ".";
+      btn.appendChild(mark);
+      btn.appendChild(document.createTextNode(opt.text));
+
+      btn.addEventListener("click", function () {
+        btn.classList.add(opt.correct ? "correct" : "incorrect");
+        fb.hidden = false;
+        fb.textContent = (opt.correct ? "Correct. " : "Not quite. ") + opt.why;
+      });
+
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+
+    card.appendChild(list);
+    card.appendChild(fb);
+    root.appendChild(card);
+  });
+})();
+</script>
+</body>
+</html>
